@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import time
 import subprocess
 import json
 import os
@@ -82,7 +83,12 @@ class Baker:
 
             if triggered_recompile or (not os.path.exists(target) or self.is_later(source, target)) \
                or (is_module and (not os.path.exists(bmi_target) or self.is_later(source, bmi_target))):
+
+                begin = time.time()
                 self.compile(source, target, node)
+                elapsed = time.time() - begin
+                eprint('> Compiled', raw_source, 'in', f'{elapsed:.2e}s')
+
                 self.compiles += 1
                 triggered_recompile_next = True
 
@@ -125,7 +131,11 @@ class Baker:
             self.collect_objects(self.root_node)
             self.objects = list(self.objects)
             target_path = os.path.join(self.dirs['build'], target)
+
+            begin = time.time()
             self.run(self.cxx + self.base_flags + self.type_flags + self.objects + ['-o', target_path])
+            elapsed = time.time() - begin
+            eprint('> Linked', target, 'in', f'{elapsed:.2e}s')
             
     def collect_objects(self, node):
         self.objects.add(
@@ -148,9 +158,12 @@ class Baker:
         for header in self.header_units:
             bmi_path = os.path.join(self.dirs['header_units'], header) + '.pcm'
             if not os.path.exists(bmi_path):
+                begin = time.time()
                 self.run(self.cxx + self.base_flags +
                          ['-Wno-pragma-system-header-outside-header', '--precompile', '-xc++-system-header',
                           header, '-o', bmi_path])
+                elapsed = time.time() - begin
+                eprint('> Precompiled header unit', header, 'in', f'{elapsed:.2e}s')
 
     def build_compile_tree(self):
         self.clip_redundant(self.root_node)
