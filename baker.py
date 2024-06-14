@@ -58,6 +58,7 @@ class Baker:
             if type(sources) != list:
                 raise ValueError(f'Source of each target must be a list (of strings): {targets}')
 
+            begin = time.time()
             self.gen_classes(sources)
             self.make_directories()
             self.make_header_units()
@@ -69,6 +70,8 @@ class Baker:
             else:
                 self.compile_all()
                 self.link(target)
+            elapsed = time.time() - begin
+            eprint('> Completed', target, 'in', f'{elapsed:.2e}s')
 
         if 'run' in self.args:
             target = self.args['run'][0]
