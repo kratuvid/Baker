@@ -83,5 +83,9 @@ def classify(filename):
 
 
 if __name__ == '__main__':
-    data = classify(sys.argv[1])
-    print(data)
+    if len(sys.argv) <= 1:
+        raise ValueError(f'Provide file(s) to classify')
+
+    for filename in sys.argv[1:]:
+        data = classify(filename)
+        print(data)
