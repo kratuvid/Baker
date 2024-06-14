@@ -132,57 +132,38 @@ class Baker:
             bmi_path = os.path.join(self.dirs['header_units'], header.replace('/', '-')) + '.pcm'
             extra_flags += ['-fmodule-file=' + bmi_path]
 
-        for module in node.data['post']:
-            collected = []
-            filename = ''
-
-            if module in self.classes[Type.module]:
-                filename = self.classes[Type.module][module].data['filename']
-            elif module in self.classes[Type.module_partition]:
-                filename = self.classes[Type.module_partition][module].data['filename']
-            else:
-                raise RuntimeError(f'{module} not found anywhere. This should have been caught earlier')
-
-            bmi_path = filename.removesuffix('.cppm') + '.pcm'
-            bmi_path = os.path.join(self.dirs['object'], bmi_path)
-
-            collected += [(module, bmi_path)]
-
-            if module in self.classes[Type.module]:
-                for module_partition in self.classes[Type.module_partition]:
-                    if module_partition.startswith(module + ':'):
-                        filename = self.classes[Type.module_partition][module_partition].data['filename']
-
-                        bmi_path = filename.removesuffix('.cppm') + '.pcm'
-                        bmi_path = os.path.join(self.dirs['object'], bmi_path)
-
-                        collected += [(module_partition, bmi_path)]
-
-            for s_module, s_bmi_path in collected:
-                extra_flags += ['-fmodule-file=' + s_module + '=' + s_bmi_path]
+        collected = []
+        self.collect_modules(node, collected)
+        for s_module, s_bmi_path in collected:
+            extra_flags += ['-fmodule-file=' + s_module + '=' + s_bmi_path]
 
         self.run(self.cxx + self.base_flags + self.type_flags + extra_flags + ['-fmodule-output', '-c', source, '-o', target])
 
+    def collect_modules(self, node, collected):
+        if node.data['type'] in [Type.module, Type.module_partition]:
+            filename = node.data['filename']
+            bmi_path = os.path.join(self.dirs['object'], filename.removesuffix('.cppm') + '.pcm')
+            collected += [(node.data['module'], bmi_path)]
+
+        for child in node.children:
+            self.collect_modules(child, collected)
+
     def link(self, target):
         if self.compiles > 0:
-            self.objects = set()
-            self.collect_objects(self.root_node)
-            self.objects = list(self.objects)
+            objects = []
+            self.collect_objects(self.root_node, objects)
             target_path = os.path.join(self.dirs['build'], target)
 
             begin = time.time()
-            self.run(self.cxx + self.base_flags + self.type_flags + self.objects + ['-o', target_path])
+            self.run(self.cxx + self.base_flags + self.type_flags + objects + ['-o', target_path])
             elapsed = time.time() - begin
             eprint('> Linked', target, 'in', f'{elapsed:.2e}s')
 
-    def collect_objects(self, node):
-        self.objects.add(
-            self.removesuffixes(['.cpp', '.cppm'],
-                                os.path.join(self.dirs['object'], node.data['filename']))
-            + '.o'
-        )
+    def collect_objects(self, node, objects):
+        objects += [self.removesuffixes(['.cpp', '.cppm'],
+                                        os.path.join(self.dirs['object'], node.data['filename'])) + '.o']
         for child in node.children:
-            self.collect_objects(child)
+            self.collect_objects(child, objects)
 
     def removesuffixes(self, suffixes, path):
         for suffix in suffixes:
