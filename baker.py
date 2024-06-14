@@ -445,5 +445,6 @@ class Baker:
         if status.returncode != 0:
             raise RuntimeError(f'Last command abnormally exited with code {status.returncode}')
 
+
 if __name__ == '__main__':
     ins = Baker()

@@ -1,4 +1,7 @@
+import json
+import sys
 import re
+
 from utility import Type
 
 re_impl = r'^module\s+(.+)$'
@@ -77,3 +80,8 @@ def classify(filename):
                 break
 
     return data
+
+
+if __name__ == '__main__':
+    data = classify(sys.argv[1])
+    print(json.dumps(data, indent=4))
