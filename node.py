@@ -19,7 +19,7 @@ class Node:
                 raise TypeError(f'Every child must be of type Node/str: {self.data}')
 
     def __repr__(self):
-        s = f'<Node (0x{id(self):x}): parent: ' + self.parent.__repr__()
+        s = f'<Node (0x{id(self):x}): parent: ' + (f'0x{id(self.parent):x}' if self.parent is not None else 'None')
         s += ', children: ' + str(len(self.children)) + ', data: '
         s += self.data.__repr__() + '>'
         return s
