@@ -92,19 +92,19 @@ class Baker:
         triggered_recompile_next = False
 
         node = self.last_node
-        siblings_left = list(range(len(node.parent.children))) if node.parent is not None else []
+        siblings_left = node.parent.children.copy() if node.parent is not None else None
 
         while True:
-            index = node.parent.children.index(node) if node.parent is not None else None
             raw_source = node.data['filename']
+
             source = os.path.join(self.options['dirs']['source'], raw_source)
             target = os.path.join(self.dirs['object'], self.removesuffixes(['.cpp', '.cppm'], raw_source) + '.o')
+
             is_module = node.data['type'] in [Type.module, Type.module_partition]
             bmi_target = target.removesuffix('.o') + '.pcm'
 
             if triggered_recompile or (not os.path.exists(target) or self.is_later(source, target)) \
                or (is_module and (not os.path.exists(bmi_target) or self.is_later(source, bmi_target))):
-
                 begin = time.time()
                 self.compile(source, target, node)
                 elapsed = time.time() - begin
@@ -116,14 +116,14 @@ class Baker:
             if id(node) == id(self.root_node):
                 break
 
-            del siblings_left[index]
+            siblings_left.remove(node)
             if len(siblings_left) > 0:
-                node = node.parent.children[0]
+                node = siblings_left[0]
             else:
                 if triggered_recompile_next:
                     triggered_recompile = True
                 node = node.parent
-                siblings_left = list(range(len(node.parent.children))) if node.parent is not None else []
+                siblings_left = node.parent.children.copy() if node.parent is not None else None
 
     def compile(self, source, target, node):
         extra_flags = []
