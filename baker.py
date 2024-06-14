@@ -33,7 +33,7 @@ class Baker:
         'dirs': {
             'source': 'src',
             'build': 'build',
-            'object': 'obj',
+            'object': 'object',
             'header_units': 'header_units',
         },
         'flags': {
