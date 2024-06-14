@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-import time
-import subprocess
 import json
 import os
 import re
+import resource
+import subprocess
 import sys
+import time
 
 from node import Node
 from utility import Type
@@ -24,7 +25,8 @@ class Baker:
         'default_bakerfile': 0,
         'dump_bakerfile': 0,
         'deptree': 0,
-        'tree': 0
+        'tree': 0,
+        'maxrss': 0
     }
 
     options_default = {
@@ -48,6 +50,11 @@ class Baker:
         self.load_bakerfile()
         self.handle_args()
         self.make_targets()
+
+        if 'maxrss' in self.args:
+            # in KBs on Linux, https://man7.org/linux/man-pages/man2/getrusage.2.html
+            maxrss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            eprint(f'> Peak RSS usage: {maxrss} KB, {maxrss/1024} MB')
 
     def make_targets(self):
         targets = self.options['targets']
