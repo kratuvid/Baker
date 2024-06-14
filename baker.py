@@ -75,6 +75,7 @@ class Baker:
             if target not in targets:
                 raise ValueError(f'Can\'t run invalid target {target}')
             target_path = os.path.join(self.dirs['build'], target)
+            eprint(f'> Run {target}')
             self.run([target_path])
 
     def compile_all(self):
