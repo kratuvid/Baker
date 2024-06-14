@@ -150,20 +150,20 @@ class Baker:
 
     def link(self, target):
         if self.compiles > 0:
-            objects = []
-            self.collect_objects(self.root_node, objects)
+            collected = []
+            self.collect_objects(self.root_node, collected)
             target_path = os.path.join(self.dirs['build'], target)
 
             begin = time.time()
-            self.run(self.cxx + self.base_flags + self.type_flags + objects + ['-o', target_path])
+            self.run(self.cxx + self.base_flags + self.type_flags + collected + ['-o', target_path])
             elapsed = time.time() - begin
             eprint('> Linked', target, 'in', f'{elapsed:.2e}s')
 
-    def collect_objects(self, node, objects):
-        objects += [self.removesuffixes(['.cpp', '.cppm'],
-                                        os.path.join(self.dirs['object'], node.data['filename'])) + '.o']
+    def collect_objects(self, node, collected):
+        collected += [self.removesuffixes(['.cpp', '.cppm'],
+                                          os.path.join(self.dirs['object'], node.data['filename'])) + '.o']
         for child in node.children:
-            self.collect_objects(child, objects)
+            self.collect_objects(child, collected)
 
     def removesuffixes(self, suffixes, path):
         for suffix in suffixes:
