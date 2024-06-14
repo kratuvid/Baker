@@ -84,4 +84,4 @@ def classify(filename):
 
 if __name__ == '__main__':
     data = classify(sys.argv[1])
-    print(json.dumps(data, indent=4))
+    print(data)
