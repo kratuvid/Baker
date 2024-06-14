@@ -57,7 +57,7 @@ class Baker:
             maxrss_children = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
             eprint('> Peak RSS usage: '
                    + f'Self: {maxrss} KiB ({maxrss/1024} MiB), '
-                   + f'Children (largest): {maxrss_children} KiB ({maxrss_children/1024} MiB)')
+                   + f'Children: {maxrss_children} KiB ({maxrss_children/1024} MiB)')
 
     def make_targets(self):
         targets = self.options['targets']
