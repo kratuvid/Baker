@@ -330,10 +330,10 @@ class Baker:
         os.chdir('..')
 
     def load_bakerfile(self):
-        if not os.path.exists('bakerfile'):
-            raise RuntimeError('Missing bakerfile')
+        if not os.path.exists('Bakerfile.json'):
+            raise RuntimeError('Missing Bakerfile.json')
 
-        with open('bakerfile') as bakerfile:
+        with open('Bakerfile.json') as bakerfile:
             self.options = {}
             options = json.load(bakerfile)
 
