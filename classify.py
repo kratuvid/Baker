@@ -57,6 +57,10 @@ def classify(filename):
                             if m_import_header_unit is not None:
                                 what = what.strip('<>"')
                                 data['header_units'] += [what]
+                            elif what[0] == ':':
+                                assert(data['module'] != '')
+                                what = data['module'].split(':')[0] + what
+                                data['post'] += [what]
                             else:
                                 data['post'] += [what]
 

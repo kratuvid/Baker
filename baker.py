@@ -22,7 +22,8 @@ class Baker:
         'show': 0,
         'rebuild': 0,
         'default_bakerfile': 0,
-        'dump_bakerfile': 0
+        'dump_bakerfile': 0,
+        'tree': 0
     }
 
     options_default = {
@@ -62,8 +63,12 @@ class Baker:
             self.make_header_units()
             self.build_dependency_tree()
             self.build_compile_tree()
-            self.compile_all()
-            self.link(target)
+            if 'tree' in self.args:
+                print(f'{target}:')
+                self.walk(self.root_node, 0)
+            else:
+                self.compile_all()
+                self.link(target)
 
     def compile_all(self):
         self.compiles = 0
@@ -112,16 +117,33 @@ class Baker:
             extra_flags += ['-fmodule-file=' + bmi_path]
 
         for module in node.data['post']:
+            collected = []
             filename = ''
+
             if module in self.classes[Type.module]:
                 filename = self.classes[Type.module][module].data['filename']
             elif module in self.classes[Type.module_partition]:
                 filename = self.classes[Type.module_partition][module].data['filename']
             else:
                 raise RuntimeError(f'{module} not found anywhere. This should have been caught earlier')
+
             bmi_path = filename.removesuffix('.cppm') + '.pcm'
             bmi_path = os.path.join(self.dirs['object'], bmi_path)
-            extra_flags += ['-fmodule-file=' + module + '=' + bmi_path]
+
+            collected += [(module, bmi_path)]
+
+            if module in self.classes[Type.module]:
+                for module_partition in self.classes[Type.module_partition]:
+                    if module_partition.startswith(module + ':'):
+                        filename = self.classes[Type.module_partition][module_partition].data['filename']
+
+                        bmi_path = filename.removesuffix('.cppm') + '.pcm'
+                        bmi_path = os.path.join(self.dirs['object'], bmi_path)
+
+                        collected += [(module_partition, bmi_path)]
+
+            for s_module, s_bmi_path in collected:
+                extra_flags += ['-fmodule-file=' + s_module + '=' + s_bmi_path]
 
         self.run(self.cxx + self.base_flags + self.type_flags + extra_flags + ['-fmodule-output', '-c', source, '-o', target])
 
@@ -167,6 +189,16 @@ class Baker:
 
     def build_compile_tree(self):
         self.clip_redundant(self.root_node)
+        self.fix_module_partition_deps(self.root_node)
+
+    def fix_module_partition_deps(self, node):
+        for child in node.children:
+            if node.data['type'] == Type.module and child.data['type'] == Type.module_partition:
+                c_node = self.classes[Type.module][node.data['module']]
+                c_partition_node = self.classes[Type.module_partition][child.data['module']]
+                c_node.data['post'] += c_partition_node.data['post']
+
+            self.fix_module_partition_deps(child)
 
     def clip_redundant(self, node):
         clip_list = []
@@ -182,7 +214,10 @@ class Baker:
             self.clip_redundant(child)
 
     def walk(self, node, depth):
-        print('At depth', depth, 'is a module', node.data['module'], 'backed by', node.data['filename'])
+        type_name = node.data['type'].name
+        print(f'Depth: {depth}, type: {type_name}'
+              + (f' ({node.data["module"]})' if type_name.startswith('module') else '')
+              + f', source: {node.data["filename"]}')
         for child in node.children:
             self.walk(child, depth+1)
 
@@ -217,7 +252,7 @@ class Baker:
                 node.children[index] = self.classes[Type.module][child]
 
             elif child in self.classes[Type.module_partition]:
-                if module != child.split(':')[0]:
+                if module.split(':')[0] != child.split(':')[0]:
                     raise RuntimeError(f'Module {module} can\'t import a foreign parition {child}')
                 node.children[index] = self.classes[Type.module_partition][child]
 
