@@ -23,6 +23,7 @@ class Baker:
         'rebuild': 0,
         'default_bakerfile': 0,
         'dump_bakerfile': 0,
+        'deptree': 0,
         'tree': 0
     }
 
@@ -63,13 +64,17 @@ class Baker:
             self.make_directories()
             self.make_header_units()
             self.build_dependency_tree()
-            self.build_compile_tree()
-            if 'tree' in self.args:
+            if 'deptree' in self.args:
                 print(f'{target}:')
                 self.walk(self.root_node, 0)
             else:
-                self.compile_all()
-                self.link(target)
+                self.build_compile_tree()
+                if 'tree' in self.args:
+                    print(f'{target}:')
+                    self.walk(self.root_node, 0)
+                else:
+                    self.compile_all()
+                    self.link(target)
             elapsed = time.time() - begin
             eprint('> Completed', target, 'in', f'{elapsed:.2e}s')
 
@@ -124,7 +129,7 @@ class Baker:
         extra_flags = []
 
         for header in node.data['header_units']:
-            bmi_path = os.path.join(self.dirs['header_units'], header) + '.pcm'
+            bmi_path = os.path.join(self.dirs['header_units'], header.replace('/', '-')) + '.pcm'
             extra_flags += ['-fmodule-file=' + bmi_path]
 
         for module in node.data['post']:
@@ -189,7 +194,7 @@ class Baker:
 
     def make_header_units(self):
         for header in self.header_units:
-            bmi_path = os.path.join(self.dirs['header_units'], header) + '.pcm'
+            bmi_path = os.path.join(self.dirs['header_units'], header.replace('/', '-')) + '.pcm'
             if not os.path.exists(bmi_path):
                 begin = time.time()
                 self.run(self.cxx + self.base_flags +
