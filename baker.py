@@ -70,6 +70,13 @@ class Baker:
                 self.compile_all()
                 self.link(target)
 
+        if 'run' in self.args:
+            target = self.args['run'][0]
+            if target not in targets:
+                raise ValueError(f'Can\'t run invalid target {target}')
+            target_path = os.path.join(self.dirs['build'], target)
+            self.run([target_path])
+
     def compile_all(self):
         self.compiles = 0
         triggered_recompile = self.rebuild
