@@ -29,7 +29,7 @@ def classify(filename):
                         assert(data['type'] == Type.plain)
                         data['type'] = Type.module_impl
                         data['module'] = m_impl.groups()[0]
-                        data['pre'] += [data['module']]
+                        data['post'] += [data['module']]
                         assigned = True
 
                     if not assigned:
@@ -70,11 +70,14 @@ def classify(filename):
                             assigned = True
 
                     if not assigned:
+                        any = False
                         for regexp in re_okay:
                             if re.search(regexp, stat) is not None:
-                                continue
-                        done = True
-                        break
+                                any = True
+                                break
+                        if not any:
+                            done = True
+                            break
 
             if done:
                 break

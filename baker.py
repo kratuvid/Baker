@@ -225,9 +225,6 @@ class Baker:
             any = False
             for index, child in enumerate(node.children):
                 if id(child.parent) != id(node):
-                    # print('\nCHILD:', child)
-                    # print('FAKE PARENT:', node)
-                    # print('REAL PARENT:', child.parent)
                     del node.children[index]
                     any = True
                     break
@@ -260,13 +257,9 @@ class Baker:
                 self.root_node.children += ['@' + str(index)]
 
     def attach_module_impls(self):
-        for module_impl in self.classes[Type.module_impl]:
-            node = self.classes[Type.module_impl][module_impl]
-            for pre in node.data['pre']:
-                if pre in self.classes[Type.module]:
-                    self.classes[Type.module][pre].children += ['#' + module_impl]
-                elif pre in self.classes[Type.module_partition]:
-                    self.classes[Type.module_partition][pre].children += ['#' + module_impl]
+        for key in self.classes[Type.module_impl]:
+            for index in range(len(self.classes[Type.module_impl][key])):
+                self.root_node.children += ['%' + key + ',' + str(index)]
 
     def fill_children(self, node, depth):
         if depth > self.last_node_depth:
@@ -288,21 +281,17 @@ class Baker:
                     raise RuntimeError(f'Module {module} can\'t import a foreign parition {child}')
                 node.children[index] = self.classes[Type.module_partition][child]
 
-            elif child[0] == '#' and child[1:] in self.classes[Type.module_impl]:
-                node.children[index] = self.classes[Type.module_impl][child[1:]]
+            elif child[0] == '%':
+                module_impl, index2 = child[1:].split(',')
+                node.children[index] = self.classes[Type.module_impl][module_impl][int(index2)]
 
-            elif child[0] == '@' and int(child[1:]) < len(self.classes[Type.plain]):
+            elif child[0] == '@':
                 node.children[index] = self.classes[Type.plain][int(child[1:])]
 
             else:
                 raise RuntimeError(f'No module named {module} is known. Did you forget to include its source?')
 
         for index in range(len(node.children)):
-            # cld = node.children[index]
-            # par = node.children[index].parent
-            # if id(par) != id(node):
-            #     par_str = f'0x{id(par):x}' if par is not None else 'None'
-            #     print(f'0x{id(cld):x}:', par_str, '->', f'0x{id(node):x}')
             child = node.children[index]
             if (child not in self.node_depth) or (depth > self.node_depth[child]):
                 self.node_depth[child] = depth
@@ -347,7 +336,12 @@ class Baker:
 
             if data['type'] == Type.plain:
                 self.classes[Type.plain].add(node)
-            elif data['type'] in [Type.module, Type.module_partition, Type.module_impl]:
+            elif data['type'] == Type.module_impl:
+                if module not in self.classes[Type.module_impl]:
+                    self.classes[Type.module_impl][module] = [node]
+                else:
+                    self.classes[Type.module_impl][module] += [node]
+            elif data['type'] in [Type.module, Type.module_partition]:
                 self.classes[data['type']][module] = node
             else:
                 raise RuntimeError(f'Unknown utility.Type. This shouldn\'t have happened: {data["type"]}')
