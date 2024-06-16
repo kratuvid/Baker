@@ -439,7 +439,6 @@ class Baker:
         status = subprocess.run(args)
         if status.returncode != 0:
             raise RuntimeError(f'Last command abnormally exited with code {status.returncode}')
-        exit(status.returncode)
 
 
 if __name__ == '__main__':
