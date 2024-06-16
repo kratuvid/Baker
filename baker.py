@@ -26,7 +26,8 @@ class Baker:
         'dump_bakerfile': 0,
         'deptree': 0,
         'tree': 0,
-        'maxrss': 0
+        'maxrss': 0,
+        'nocatch': 0
     }
 
     options_default = {
@@ -441,4 +442,10 @@ class Baker:
 
 
 if __name__ == '__main__':
-    ins = Baker()
+    if 'nocatch' in sys.argv:
+        ins = Baker()
+    else:
+        try:
+            ins = Baker()
+        except Exception as e:
+            eprint(e)
