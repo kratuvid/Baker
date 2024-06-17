@@ -200,7 +200,7 @@ class Baker:
                 if not self.show:
                     eprint(f'> Precompiling header {header}...', end='', flush=True)
                 begin = time.time()
-                self.run(self.cxx + self.base_flags +
+                self.run(self.cxx + self.base_flags + self.type_flags +
                          ['-Wno-pragma-system-header-outside-header', '--precompile', '-xc++-system-header',
                           header, '-o', bmi_path])
                 if not self.show:
@@ -413,7 +413,7 @@ class Baker:
         self.dirs = {}
         self.dirs['build'] = os.path.join(self.options['dirs']['build'], self.type)
         self.dirs['object'] = os.path.join(self.dirs['build'], self.options['dirs']['object'])
-        self.dirs['header_units'] = os.path.join(self.options['dirs']['build'], self.options['dirs']['header_units'])
+        self.dirs['header_units'] = os.path.join(self.dirs['build'], self.options['dirs']['header_units'])
 
         self.cxx = [self.options['options']['cxx']]
 
